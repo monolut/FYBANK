@@ -1,6 +1,7 @@
 package org.bank.authservice.service;
 
 import org.bank.authservice.dto.UserDto;
+import org.bank.authservice.dto.auth.UpdatePasswordRequest;
 import org.bank.authservice.entity.RoleEntity;
 import org.bank.authservice.entity.UserEntity;
 import org.bank.authservice.enums.Role;
@@ -142,9 +143,12 @@ public class UserService {
     }
 
     @Transactional
-    public UserDto updateUserPassword(Long id, String oldPassword, String newPassword) {
+    public UserDto updateUserPassword(Long id, UpdatePasswordRequest updatePasswordRequest) {
 
         log.info("Updating password for userId={}", id);
+
+        String oldPassword = updatePasswordRequest.getOldPassword();
+        String newPassword = updatePasswordRequest.getNewPassword();
 
         UserEntity user = userRepository.findById(id)
                 .orElseThrow(() -> {

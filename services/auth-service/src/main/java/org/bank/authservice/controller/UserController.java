@@ -1,8 +1,10 @@
 package org.bank.authservice.controller;
 
-import org.bank.authservice.dto.UserDto;
-import org.bank.authservice.service.UserService;
 import jakarta.validation.Valid;
+import org.bank.authcommon.service.AuthCommonService;
+import org.bank.authservice.dto.UserDto;
+import org.bank.authservice.dto.auth.UpdatePasswordRequest;
+import org.bank.authservice.service.UserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,18 +12,25 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
-@RequestMapping("/api/v1/user/users")
+@RequestMapping("/api/v1/users")
 @CrossOrigin("*")
 public class UserController {
 
     private static final Logger log =  LoggerFactory.getLogger(UserController.class);
 
     private final UserService userService;
+    private final AuthCommonService authCommonService;
 
     @Autowired
-    public UserController(UserService userService) {
+    public UserController(
+            UserService userService,
+            AuthCommonService authCommonService
+    ) {
         this.userService = userService;
+        this.authCommonService = authCommonService;
     }
 
     @GetMapping("/email")
@@ -33,24 +42,23 @@ public class UserController {
         return ResponseEntity.ok(userDto);
     }
 
-    @PatchMapping("/{id}/update/password")
+    @PatchMapping("/update/password")
     public ResponseEntity<UserDto> updateUserPassword(
-            @PathVariable Long id,
-            @RequestBody String oldPassword,
-            @RequestBody String newPassword
-    ) {
+            @RequestBody UpdatePasswordRequest updatePasswordRequest
+            ) {
+        Long id = authCommonService.getUserId();
 
         log.info("PATCH /users/{}/update/password request received", id);
 
-        UserDto user = userService.updateUserPassword(id, oldPassword, newPassword);
+        UserDto user = userService.updateUserPassword(id, updatePasswordRequest);
         return ResponseEntity.ok(user);
     }
 
     @PatchMapping("/{id}")
     public ResponseEntity<UserDto> updateUserById(
-            @PathVariable Long id,
             @Valid @RequestBody UserDto userDto
     ) {
+        Long id = authCommonService.getUserId();
 
         log.info("PATCH /users/{} request received", id);
 
@@ -58,8 +66,9 @@ public class UserController {
         return ResponseEntity.ok(userDto);
     }
 
-    @DeleteMapping("/delete/{id}")
-    public ResponseEntity<Void> deleteUserById(@PathVariable Long id) {
+    @DeleteMapping("/delete")
+    public ResponseEntity<Void> deleteUserById() {
+        Long id = authCommonService.getUserId();
 
         log.info("DELETE /users/delete/{} request received", id);
 
