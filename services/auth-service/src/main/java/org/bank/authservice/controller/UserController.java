@@ -50,7 +50,11 @@ public class UserController {
 
         log.info("PATCH /users/{}/update/password request received", id);
 
-        UserDto user = userService.updateUserPassword(id, updatePasswordRequest);
+        UserDto user = userService.updateUserPassword(
+                id,
+                updatePasswordRequest.getOldPassword(),
+                updatePasswordRequest.getNewPassword()
+        );
         return ResponseEntity.ok(user);
     }
 
