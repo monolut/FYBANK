@@ -9,6 +9,6 @@ public class RoleNotFoundException extends RuntimeException {
     }
 
     public static RoleNotFoundException byRole(Role role) {
-        return new RoleNotFoundException(String.format("Role %s not found", role));
+        throw new RoleNotFoundException(String.format("Role %s not found", role));
     }
 }

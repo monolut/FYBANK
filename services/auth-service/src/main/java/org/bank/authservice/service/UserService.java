@@ -1,5 +1,6 @@
 package org.bank.authservice.service;
 
+import org.bank.authcommon.service.AuthCommonService;
 import org.bank.authservice.dto.UserDto;
 import org.bank.authservice.entity.RoleEntity;
 import org.bank.authservice.entity.UserEntity;
@@ -32,6 +33,7 @@ public class UserService {
     private final UserMapper userMapper;
     private final PasswordEncoder passwordEncoder;
     private final ApplicationEventPublisher applicationEventPublisher;
+    private final AuthCommonService authCommonService;
 
     @Autowired
     public UserService(
@@ -39,13 +41,15 @@ public class UserService {
             RoleRepository roleRepository,
             UserMapper userMapper,
             PasswordEncoder passwordEncoder,
-            ApplicationEventPublisher applicationEventPublisher
+            ApplicationEventPublisher applicationEventPublisher,
+            AuthCommonService authCommonService
     ) {
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
         this.userMapper = userMapper;
         this.passwordEncoder = passwordEncoder;
         this.applicationEventPublisher = applicationEventPublisher;
+        this.authCommonService = authCommonService;
     }
 
     @Transactional(readOnly = true)
@@ -118,7 +122,8 @@ public class UserService {
     }
 
     @Transactional
-    public UserDto updateUserById(Long id, UserDto userDto) {
+    public UserDto updateUserById(UserDto userDto) {
+        Long id = authCommonService.getUserId();
 
         log.info("Updating user data for userId={}", id);
 
@@ -141,7 +146,8 @@ public class UserService {
     }
 
     @Transactional
-    public UserDto updateUserPassword(Long id, String oldPassword, String newPassword) {
+    public UserDto updateUserPassword(String oldPassword, String newPassword) {
+        Long id = authCommonService.getUserId();
 
         log.info("Updating password for userId={}", id);
 
@@ -168,7 +174,8 @@ public class UserService {
     }
 
     @Transactional
-    public void deleteUserById(Long id) {
+    public void deleteUserById() {
+        Long id = authCommonService.getUserId();
 
         log.info("Deleting user with userId={}", id);
 

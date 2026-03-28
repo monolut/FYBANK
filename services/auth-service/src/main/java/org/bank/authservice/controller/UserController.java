@@ -1,7 +1,6 @@
 package org.bank.authservice.controller;
 
 import jakarta.validation.Valid;
-import org.bank.authcommon.service.AuthCommonService;
 import org.bank.authservice.dto.UserDto;
 import org.bank.authservice.dto.auth.UpdatePasswordRequest;
 import org.bank.authservice.service.UserService;
@@ -20,15 +19,12 @@ public class UserController {
     private static final Logger log =  LoggerFactory.getLogger(UserController.class);
 
     private final UserService userService;
-    private final AuthCommonService authCommonService;
 
     @Autowired
     public UserController(
-            UserService userService,
-            AuthCommonService authCommonService
+            UserService userService
     ) {
         this.userService = userService;
-        this.authCommonService = authCommonService;
     }
 
     @GetMapping("/email")
@@ -44,37 +40,33 @@ public class UserController {
     public ResponseEntity<UserDto> updateUserPassword(
             @RequestBody UpdatePasswordRequest updatePasswordRequest
             ) {
-        Long id = authCommonService.getUserId();
 
-        log.info("PATCH /users/{}/update/password request received", id);
+        log.info("PATCH /users/update/password request received");
 
         UserDto user = userService.updateUserPassword(
-                id,
                 updatePasswordRequest.getOldPassword(),
                 updatePasswordRequest.getNewPassword()
         );
         return ResponseEntity.ok(user);
     }
 
-    @PatchMapping("/{id}")
+    @PatchMapping()
     public ResponseEntity<UserDto> updateUserById(
             @Valid @RequestBody UserDto userDto
     ) {
-        Long id = authCommonService.getUserId();
 
-        log.info("PATCH /users/{} request received", id);
+        log.info("PATCH /users/{} request received");
 
-        userService.updateUserById(id, userDto);
+        userService.updateUserById(userDto);
         return ResponseEntity.ok(userDto);
     }
 
     @DeleteMapping("/delete")
     public ResponseEntity<Void> deleteUserById() {
-        Long id = authCommonService.getUserId();
 
-        log.info("DELETE /users/delete/{} request received", id);
+        log.info("DELETE /users/delete/{} request received");
 
-        userService.deleteUserById(id);
+        userService.deleteUserById();
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 }
