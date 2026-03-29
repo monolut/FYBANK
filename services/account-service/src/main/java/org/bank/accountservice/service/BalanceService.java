@@ -25,11 +25,10 @@ public class BalanceService {
         this.balanceMapper = balanceMapper;
     }
 
-    public BalanceEntity createInitialBalance(Currency currency) {
+    public BalanceEntity createInitialBalance() {
         return new BalanceEntity(
                 BigDecimal.ZERO,
-                BigDecimal.ZERO,
-                currency
+                BigDecimal.ZERO
         );
     }
 

@@ -4,11 +4,12 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.bank.accountservice.enums.AccountStatus;
+import org.bank.accountservice.exception.AccountBlockedException;
 import org.bank.accountservice.exception.InsufficientFundsException;
 import org.bank.accountservice.exception.InsufficientReservedFundsException;
 
 import java.math.BigDecimal;
-import java.util.Currency;
 
 @Entity
 @Getter
@@ -30,51 +31,42 @@ public class BalanceEntity {
 
     private BigDecimal reserved;
 
-    @Convert(converter = CurrencyConverter.class)
-    private Currency currency;
-
     @Version
     private Long version;
 
-    public BalanceEntity(BigDecimal actual, BigDecimal reserved, Currency currency) {
-        this.actual = actual;
-        this.reserved = reserved;
-        this.available = actual.subtract(reserved);
-        this.currency = currency;
+    public BalanceEntity(BigDecimal actual, BigDecimal reserved) {
+        this.actual = actual != null ? actual : BigDecimal.ZERO;
+        this.reserved = reserved != null ? reserved : BigDecimal.ZERO;
+        this.available = this.actual.subtract(this.reserved);
     }
 
     public void credit(BigDecimal amount) {
+        checkStatus();
+        validatePositive(amount);
         actual = actual.add(amount);
         recalcAvailable();
     }
 
     public void debit(BigDecimal amount) {
-        if (available.compareTo(amount) < 0) {
-            throw new InsufficientFundsException(account.getId());
-        }
+        checkActiveAndSufficient(amount, false);
         actual = actual.subtract(amount);
         recalcAvailable();
     }
 
     public void reserve(BigDecimal amount) {
-        if (available.compareTo(amount) < 0) {
-            throw new InsufficientFundsException(account.getId());
-        }
-
+        checkActiveAndSufficient(amount, false);
         reserved = reserved.add(amount);
         recalcAvailable();
     }
 
     public void releaseReserve(BigDecimal amount) {
+        checkActiveAndSufficient(amount, true);
         reserved = reserved.subtract(amount);
         recalcAvailable();
     }
 
     public void commitReserve(BigDecimal amount) {
-        if (reserved.compareTo(amount) < 0) {
-            throw new InsufficientReservedFundsException(account.getId());
-        }
-
+        checkActiveAndSufficient(amount, true);
         reserved = reserved.subtract(amount);
         actual = actual.subtract(amount);
         recalcAvailable();
@@ -82,5 +74,28 @@ public class BalanceEntity {
 
     private void recalcAvailable() {
         available = actual.subtract(reserved);
+    }
+
+    private void checkStatus() {
+        if (account.getStatus() != AccountStatus.ACTIVE) {
+            throw new AccountBlockedException(account.getId());
+        }
+    }
+
+    private void validatePositive(BigDecimal amount) {
+        if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("Amount must be positive");
+        }
+    }
+
+    private void checkActiveAndSufficient(BigDecimal amount, boolean reserved) {
+        checkStatus();
+        validatePositive(amount);
+        if (
+                reserved ? this.reserved.compareTo(amount) < 0 : this.available.compareTo(amount) < 0
+        ) {
+            throw reserved ? new InsufficientReservedFundsException(account.getId())
+                    : new InsufficientFundsException(account.getId());
+        }
     }
 }
