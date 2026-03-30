@@ -6,6 +6,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.bank.accountservice.enums.AccountStatus;
 import org.bank.accountservice.exception.AccountBlockedException;
+import org.bank.accountservice.exception.AmountNotPositiveException;
 import org.bank.accountservice.exception.InsufficientFundsException;
 import org.bank.accountservice.exception.InsufficientReservedFundsException;
 
@@ -84,7 +85,7 @@ public class BalanceEntity {
 
     private void validatePositive(BigDecimal amount) {
         if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
-            throw new IllegalArgumentException("Amount must be positive");
+            throw new AmountNotPositiveException();
         }
     }
 

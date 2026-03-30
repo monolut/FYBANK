@@ -55,7 +55,7 @@ public class UserController {
             @Valid @RequestBody UserDto userDto
     ) {
 
-        log.info("PATCH /users/{} request received");
+        log.info("PATCH /users request received");
 
         userService.updateUserById(userDto);
         return ResponseEntity.ok(userDto);
@@ -64,7 +64,7 @@ public class UserController {
     @DeleteMapping("/delete")
     public ResponseEntity<Void> deleteUserById() {
 
-        log.info("DELETE /users/delete/{} request received");
+        log.info("DELETE /users/delete request received");
 
         userService.deleteUserById();
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();

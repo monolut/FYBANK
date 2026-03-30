@@ -55,9 +55,7 @@ public class AccountService {
     @Transactional
     public void closeAccount(Long accountId) {
         AccountEntity account = accountRepository.findByIdWithBalance(accountId)
-                .orElseThrow(() -> {
-                    return new AccountNotFoundByIdException(accountId);
-                });
+                .orElseThrow(() -> new AccountNotFoundByIdException(accountId));
 
         if (account.getBalance().getActual().compareTo(BigDecimal.ZERO) != 0 ||
             account.getBalance().getReserved().compareTo(BigDecimal.ZERO) != 0) {

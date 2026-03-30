@@ -9,7 +9,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.util.Currency;
 
 @Service
 public class BalanceService {
@@ -35,9 +34,7 @@ public class BalanceService {
     @Transactional(readOnly = true)
     public BalanceDto getBalanceByAccountId(Long accountId) {
         BalanceEntity balance = balanceRepository.findBalanceByAccountId(accountId)
-                .orElseThrow(() -> {
-                    return new AccountNotFoundByIdException(accountId);
-                });
+                .orElseThrow(() ->  new AccountNotFoundByIdException(accountId));
 
         return balanceMapper.toDto(balance);
     }
