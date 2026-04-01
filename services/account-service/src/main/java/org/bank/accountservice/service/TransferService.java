@@ -2,10 +2,8 @@ package org.bank.accountservice.service;
 
 import jakarta.persistence.OptimisticLockException;
 import org.bank.accountservice.entity.AccountEntity;
-import org.bank.accountservice.exception.AccountBlockedException;
-import org.bank.accountservice.exception.AccountNotFoundByIdException;
-import org.bank.accountservice.exception.AmountNotPositiveException;
-import org.bank.accountservice.exception.SameAccountTransferException;
+import org.bank.accountservice.entity.BalanceEntity;
+import org.bank.accountservice.exception.*;
 import org.bank.accountservice.repository.AccountRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -52,7 +50,22 @@ public class TransferService {
         AccountEntity recipient = accountRepository.findByIdWithBalance(recipientId)
                 .orElseThrow(() -> new AccountNotFoundByIdException(recipientId));
 
-        sender.getBalance().debit(amount);
-        recipient.getBalance().credit(amount);
+        transfer(sender.getBalance(), recipient.getBalance(), amount);
+    }
+
+    @Transactional
+    public void transferWithIban(Long senderId, String iban, BigDecimal amount) {
+        AccountEntity sender = accountRepository.findByIdWithBalance(senderId)
+                .orElseThrow(() -> new AccountNotFoundByIdException(senderId));
+
+        AccountEntity recipient = accountRepository.findByIban(iban)
+                        .orElseThrow(() -> new AccountNotFoundByIban(iban));
+
+        transfer(sender.getBalance(), recipient.getBalance(), amount);
+    }
+
+    private void transfer(BalanceEntity sender, BalanceEntity recipient, BigDecimal amount) {
+        sender.debit(amount);
+        recipient.credit(amount);
     }
 }

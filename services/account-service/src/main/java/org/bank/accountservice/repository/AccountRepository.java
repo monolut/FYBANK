@@ -20,4 +20,6 @@ public interface AccountRepository extends JpaRepository<AccountEntity, Long> {
             WHERE a.id = :accountId
     """)
     Optional<AccountEntity> findByIdWithBalance(@Param("accountId") Long accountId);
+
+    Optional<AccountEntity> findByIban(String iban);
 }
