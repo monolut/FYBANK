@@ -31,10 +31,11 @@ public class TransferController {
         return ResponseEntity.noContent().build();
     }
 
+    @PostMapping("/iban")
     public ResponseEntity<Void> executeTransferWithIban(
             @RequestBody IbanTransferRequest request
     ) {
-        transferService.transferWithIban(
+        transferService.executeTransferWithIban(
                 request.getSenderId(),
                 request.getIban(),
                 request.getAmount()
