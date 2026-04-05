@@ -10,6 +10,7 @@
         <option value="$PROJECT_DIR$/libs/auth_common/pom.xml" />
         <option value="$PROJECT_DIR$/libs/auth-common/pom.xml" />
         <option value="$PROJECT_DIR$/services/account-service/pom.xml" />
+        <option value="$PROJECT_DIR$/services/user-service/pom.xml" />
       </list>
     </option>
     <option name="ignoredFiles">
