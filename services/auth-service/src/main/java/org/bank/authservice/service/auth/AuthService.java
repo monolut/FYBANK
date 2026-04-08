@@ -1,5 +1,6 @@
 package org.bank.authservice.service.auth;
 
+import org.bank.authcommon.service.AuthCommonService;
 import org.bank.authcommon.service.JwtService;
 import org.bank.authservice.dto.auth.AuthRequest;
 import org.bank.authservice.dto.auth.AuthResponse;
@@ -24,18 +25,20 @@ public class AuthService {
     private final AuthenticationManager authenticationManager;
     private final UserService userService;
     private final RefreshTokenService refreshTokenService;
+    private final AuthCommonService authCommonService;
 
     @Autowired
     public AuthService(
             JwtService jwtService,
             AuthenticationManager authenticationManager,
             UserService userService,
-            RefreshTokenService refreshTokenService
-    ) {
+            RefreshTokenService refreshTokenService,
+            AuthCommonService authCommonService) {
         this.jwtService = jwtService;
         this.authenticationManager = authenticationManager;
         this.userService = userService;
         this.refreshTokenService = refreshTokenService;
+        this.authCommonService = authCommonService;
     }
 
     public void register(RegisterRequest dto) {
@@ -127,7 +130,8 @@ public class AuthService {
                 token.getUser().getId());
     }
 
-    public void logoutAll(Long userId) {
+    public void logoutAll() {
+        Long userId = authCommonService.getUserId();
 
         log.info("Logout all sessions for userId={}", userId);
 

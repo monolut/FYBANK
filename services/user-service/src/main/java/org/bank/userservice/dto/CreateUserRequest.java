@@ -5,15 +5,12 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.List;
-
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class UserDto {
+public class CreateUserRequest {
     String firstName;
     String lastName;
-    String email;
-    List<Integer> accountIds;
+    String phoneNumber;
 }

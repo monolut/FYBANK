@@ -18,4 +18,6 @@ public interface RefreshTokenRepository extends JpaRepository<RefreshTokenEntity
         WHERE rt.user.id = :userId
     """)
     void revokeAllByUserId(Long userId);
+
+    void deleteAllByUserId(Long userId);
 }

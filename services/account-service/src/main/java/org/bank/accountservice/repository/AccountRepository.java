@@ -2,6 +2,7 @@ package org.bank.accountservice.repository;
 
 import org.bank.accountservice.entity.AccountEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -22,4 +23,8 @@ public interface AccountRepository extends JpaRepository<AccountEntity, Long> {
     Optional<AccountEntity> findByIdWithBalance(@Param("accountId") Long accountId);
 
     Optional<AccountEntity> findByIban(String iban);
+
+    @Modifying
+    @Query("delete from AccountEntity a where a.userId = :userId")
+    void deleteAllByUserId(Long userId);
 }

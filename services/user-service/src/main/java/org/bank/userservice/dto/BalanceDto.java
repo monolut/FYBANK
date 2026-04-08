@@ -5,15 +5,14 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.List;
+import java.math.BigDecimal;
 
 @Data
-@AllArgsConstructor
 @NoArgsConstructor
+@AllArgsConstructor
 @Builder
-public class UserDto {
-    String firstName;
-    String lastName;
-    String email;
-    List<Integer> accountIds;
+public class BalanceDto {
+    private BigDecimal actual;
+    private BigDecimal available;
+    private BigDecimal reserved;
 }

@@ -60,13 +60,4 @@ public class UserController {
         userService.updateUserById(userDto);
         return ResponseEntity.ok(userDto);
     }
-
-    @DeleteMapping("/delete")
-    public ResponseEntity<Void> deleteUserById() {
-
-        log.info("DELETE /users/delete request received");
-
-        userService.deleteUserById();
-        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
-    }
 }

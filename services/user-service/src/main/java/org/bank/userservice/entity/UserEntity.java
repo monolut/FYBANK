@@ -12,13 +12,11 @@ import java.util.List;
 @Entity
 @Getter
 @Setter
-@AllArgsConstructor
 @NoArgsConstructor
 @Table(name = "users")
 public class UserEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     private String firstName;
@@ -26,6 +24,9 @@ public class UserEntity {
 
     @Column(unique = true)
     private String email;
+
+    @Column(unique = true)
+    private String phoneNumber;
 
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
@@ -42,5 +43,19 @@ public class UserEntity {
     @PreUpdate
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
+    }
+
+    public UserEntity(
+            Long id,
+            String firstName,
+            String lastName,
+            String email,
+            String phoneNumber
+    ) {
+        this.id = id;
+        this.firstName = firstName;
+        this.lastName = lastName;
+        this.email = email;
+        this.phoneNumber = phoneNumber;
     }
 }

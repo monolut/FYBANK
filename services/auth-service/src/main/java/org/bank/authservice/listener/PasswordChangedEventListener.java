@@ -1,5 +1,6 @@
 package org.bank.authservice.listener;
 
+import lombok.extern.slf4j.Slf4j;
 import org.bank.authservice.event.PasswordChangedEvent;
 import org.bank.authservice.service.auth.AuthService;
 import org.slf4j.Logger;
@@ -10,10 +11,9 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 
+@Slf4j
 @Component
 public class PasswordChangedEventListener {
-
-    private static final Logger log = LoggerFactory.getLogger(PasswordChangedEventListener.class);
 
     private final AuthService authService;
 
@@ -32,7 +32,7 @@ public class PasswordChangedEventListener {
 
         log.info("PasswordChangedEvent received, userId={}", userId);
         try {
-            authService.logoutAll(userId);
+            authService.logoutAll();
 
             log.info("All sessions invalidated after password change, userId={}", userId);
         } catch (Exception e) {

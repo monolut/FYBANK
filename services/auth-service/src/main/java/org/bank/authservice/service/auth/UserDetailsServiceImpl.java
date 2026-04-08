@@ -1,7 +1,7 @@
 package org.bank.authservice.service.auth;
 
 import org.bank.authservice.entity.UserEntity;
-import org.bank.authservice.exception.UserNotFoundException;
+import org.bank.authservice.exception.UserNotFoundByEmailException;
 import org.bank.authservice.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.User;
@@ -22,14 +22,12 @@ public class UserDetailsServiceImpl implements UserDetailsService {
     @Override
     public UserDetails loadUserByUsername(String username) {
         UserEntity user = userRepository.findByEmail(username)
-                .orElseThrow(() -> UserNotFoundException.byEmail(username));
+                .orElseThrow(() -> new UserNotFoundByEmailException(username));
 
-        UserDetails userDetails = User.builder()
+        return User.builder()
                 .username(user.getEmail())
                 .password(user.getPassword())
                 .roles(user.getRole().getRoleName().toString())
                 .build();
-        return userDetails;
-
     }
 }

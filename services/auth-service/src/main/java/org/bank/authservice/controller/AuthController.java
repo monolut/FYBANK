@@ -3,6 +3,7 @@ package org.bank.authservice.controller;
 import org.bank.authservice.dto.auth.AuthRequest;
 import org.bank.authservice.dto.auth.AuthResponse;
 import org.bank.authservice.dto.auth.RegisterRequest;
+import org.bank.authservice.service.UserService;
 import org.bank.authservice.service.auth.AuthService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,10 +19,12 @@ public class AuthController {
     private static final Logger log = LoggerFactory.getLogger(AuthController.class);
 
     private final AuthService authService;
+    private final UserService userService;
 
     @Autowired
-    public AuthController(AuthService authService) {
+    public AuthController(AuthService authService, UserService userService) {
         this.authService = authService;
+        this.userService = userService;
     }
 
     @PostMapping("/login")
@@ -68,14 +71,19 @@ public class AuthController {
         return ResponseEntity.noContent().build();
     }
 
-    @PostMapping("/logout/{userId}")
+    @PostMapping("/logoutAll")
     public ResponseEntity<Void> logoutAll(
-            @PathVariable Long userId
     ) {
 
-        log.info("POST /auth/logout/{} request received", userId);
+        log.info("POST /auth/logout/ request received");
 
-        authService.logoutAll(userId);
+        authService.logoutAll();
+        return ResponseEntity.noContent().build();
+    }
+
+    @DeleteMapping("/internal/delete")
+    public ResponseEntity<Void> deleteUserData() {
+        userService.deleteUser();
         return ResponseEntity.noContent().build();
     }
 }

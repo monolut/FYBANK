@@ -6,9 +6,9 @@ import org.bank.authservice.entity.RoleEntity;
 import org.bank.authservice.entity.UserEntity;
 import org.bank.authservice.enums.Role;
 import org.bank.authservice.event.PasswordChangedEvent;
-import org.bank.authservice.exception.RoleNotFoundException;
-import org.bank.authservice.exception.UserNotFoundException;
+import org.bank.authservice.exception.*;
 import org.bank.authservice.mapper.UserMapper;
+import org.bank.authservice.repository.RefreshTokenRepository;
 import org.bank.authservice.repository.RoleRepository;
 import org.bank.authservice.repository.UserRepository;
 import org.slf4j.Logger;
@@ -34,6 +34,7 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
     private final ApplicationEventPublisher applicationEventPublisher;
     private final AuthCommonService authCommonService;
+    private final RefreshTokenRepository refreshTokenRepository;
 
     @Autowired
     public UserService(
@@ -42,14 +43,15 @@ public class UserService {
             UserMapper userMapper,
             PasswordEncoder passwordEncoder,
             ApplicationEventPublisher applicationEventPublisher,
-            AuthCommonService authCommonService
-    ) {
+            AuthCommonService authCommonService,
+            RefreshTokenRepository refreshTokenRepository) {
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
         this.userMapper = userMapper;
         this.passwordEncoder = passwordEncoder;
         this.applicationEventPublisher = applicationEventPublisher;
         this.authCommonService = authCommonService;
+        this.refreshTokenRepository = refreshTokenRepository;
     }
 
     @Transactional(readOnly = true)
@@ -72,10 +74,7 @@ public class UserService {
         log.debug("Fetching user DTO by email={}", email);
 
         UserEntity user = userRepository.findByEmail(email)
-                .orElseThrow(() -> {
-                    log.warn("User not found by email={}", email);
-                    return UserNotFoundException.byEmail(email);
-                });
+                .orElseThrow(() -> new UserNotFoundByEmailException(email));
 
         return userMapper.toDto(user);
     }
@@ -86,10 +85,7 @@ public class UserService {
         log.debug("Fetching user entity by email={}", email);
 
         return userRepository.findByEmail(email)
-                .orElseThrow(() -> {
-                    log.warn("User not found by email={}", email);
-                    return UserNotFoundException.byEmail(email);
-                });
+                .orElseThrow(() -> new UserNotFoundByEmailException(email));
     }
 
     @Transactional
@@ -98,8 +94,7 @@ public class UserService {
         log.info("Creating new user with email={}", email);
 
         if(userRepository.findByEmail(email).isPresent()) {
-            log.warn("User creation failed: email already exists {}", email);
-            throw UserNotFoundException.emailExists(email);
+            throw new UserEmailAlreadyExistsException(email);
         }
 
         RoleEntity role = roleRepository.findByRoleName(Role.USER)
@@ -128,10 +123,7 @@ public class UserService {
         log.info("Updating user data for userId={}", id);
 
         UserEntity userEntity = userRepository.findById(id)
-                .orElseThrow(() -> {
-                    log.warn("User not found for update, userId={}", id);
-                    return UserNotFoundException.byId(id);
-                });
+                .orElseThrow(() -> new UserNotFoundByIdException(id));
 
         if (userDto.getEmail() != null && !userDto.getEmail().isBlank()) {
             userEntity.setEmail(userDto.getEmail());
@@ -152,10 +144,7 @@ public class UserService {
         log.info("Updating password for userId={}", id);
 
         UserEntity user = userRepository.findById(id)
-                .orElseThrow(() -> {
-                    log.warn("User not found for password update, userId={}", id);
-                    return UserNotFoundException.byId(id);
-                });
+                .orElseThrow(() -> new UserNotFoundByIdException(id));
 
         if (!passwordEncoder.matches(oldPassword, user.getPassword())) {
             log.warn("Password update failed: invalid old password, userId={}", id);
@@ -174,17 +163,15 @@ public class UserService {
     }
 
     @Transactional
-    public void deleteUserById() {
+    public void deleteUser() {
         Long id = authCommonService.getUserId();
 
         log.info("Deleting user with userId={}", id);
 
         UserEntity user = userRepository.findById(id)
-                .orElseThrow(() -> {
-                    log.warn("User not found for deletion, userId={}", id);
-                    return UserNotFoundException.byId(id);
-                });
+                .orElseThrow(() -> new UserNotFoundByIdException(id));
 
+        refreshTokenRepository.deleteAllByUserId(id);
         userRepository.delete(user);
 
         log.info("User successfully deleted, userId={}", id);

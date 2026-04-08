@@ -8,6 +8,7 @@ import org.bank.accountservice.exception.AccountBalanceNotZeroException;
 import org.bank.accountservice.exception.AccountNotFoundByIdException;
 import org.bank.accountservice.mapper.AccountMapper;
 import org.bank.accountservice.repository.AccountRepository;
+import org.bank.accountservice.repository.BalanceRepository;
 import org.bank.authcommon.service.AuthCommonService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,17 +24,19 @@ public class AccountService {
     private final AccountMapper accountMapper;
     private final BalanceService balanceService;
     private final AuthCommonService authCommonService;
+    private final BalanceRepository balanceRepository;
 
     public AccountService(
             AccountRepository accountRepository,
             AccountMapper accountMapper,
             BalanceService balanceService,
-            AuthCommonService authCommonService
-    ) {
+            AuthCommonService authCommonService,
+            BalanceRepository balanceRepository) {
         this.accountRepository = accountRepository;
         this.accountMapper = accountMapper;
         this.balanceService = balanceService;
         this.authCommonService =authCommonService;
+        this.balanceRepository = balanceRepository;
     }
 
     @Transactional
@@ -89,6 +92,14 @@ public class AccountService {
         Long userId = authCommonService.getUserId();
 
         return accountMapper.toDtoList(accountRepository.findAccountEntitiesByUserId(userId));
+    }
+
+    @Transactional
+    public void deleteAllAccounts() {
+        Long userId = authCommonService.getUserId();
+
+        balanceRepository.deleteAllByUserId(userId);
+        accountRepository.deleteAllByUserId(userId);
     }
 
     private AccountEntity getAccountEntity(Long accountId) {
