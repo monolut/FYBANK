@@ -88,18 +88,14 @@ public class AccountService {
     }
 
     @Transactional(readOnly = true)
-    public List<AccountDto> getUserAccounts() {
-        Long userId = authCommonService.getUserId();
-
+    public List<AccountDto> getUserAccounts(Long userId) {
         return accountMapper.toDtoList(accountRepository.findAccountEntitiesByUserId(userId));
     }
 
     @Transactional
-    public void deleteAllAccounts() {
-        Long userId = authCommonService.getUserId();
-
-        balanceRepository.deleteAllByUserId(userId);
+    public void deleteAllAccounts(Long userId) {
         accountRepository.deleteAllByUserId(userId);
+        balanceRepository.deleteAllByUserId(userId);
     }
 
     private AccountEntity getAccountEntity(Long accountId) {

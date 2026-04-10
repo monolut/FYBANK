@@ -26,7 +26,7 @@ public class BalanceService {
 
     public BalanceEntity createInitialBalance() {
         return new BalanceEntity(
-                BigDecimal.ZERO,
+                new BigDecimal("1000.00"),
                 BigDecimal.ZERO
         );
     }

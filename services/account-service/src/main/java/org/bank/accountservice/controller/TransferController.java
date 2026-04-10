@@ -1,6 +1,7 @@
 package org.bank.accountservice.controller;
 
 import org.bank.accountservice.dto.IbanTransferRequest;
+import org.bank.accountservice.dto.TransactionDto;
 import org.bank.accountservice.dto.TransferRequest;
 import org.bank.accountservice.service.TransferService;
 import org.springframework.http.ResponseEntity;
@@ -20,26 +21,27 @@ public class TransferController {
     }
 
     @PostMapping
-    public ResponseEntity<Void> executeTransfer(
+    public ResponseEntity<TransactionDto> executeTransfer(
             @RequestBody TransferRequest request
     ) {
-        transferService.executeTransfer(
-                request.getSenderId(),
-                request.getRecipientId(),
-                request.getAmount()
-        );
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(
+                transferService.executeTransfer(
+                        request.getSenderId(),
+                        request.getRecipientId(),
+                        request.getAmount()
+                ));
     }
 
     @PostMapping("/iban")
-    public ResponseEntity<Void> executeTransferWithIban(
+    public ResponseEntity<TransactionDto> executeTransferWithIban(
             @RequestBody IbanTransferRequest request
     ) {
-        transferService.executeTransferWithIban(
-                request.getSenderId(),
-                request.getIban(),
-                request.getAmount()
+
+        return ResponseEntity.ok(
+                transferService.executeTransferWithIban(
+                        request.getSenderId(),
+                        request.getIban(),
+                        request.getAmount())
         );
-        return ResponseEntity.noContent().build();
     }
 }
