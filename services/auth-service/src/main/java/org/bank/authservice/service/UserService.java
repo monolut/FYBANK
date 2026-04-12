@@ -163,17 +163,15 @@ public class UserService {
     }
 
     @Transactional
-    public void deleteUser() {
-        Long id = authCommonService.getUserId();
+    public void deleteUser(Long userId) {
+        log.info("Deleting user with userId={}", userId);
 
-        log.info("Deleting user with userId={}", id);
+        UserEntity user = userRepository.findById(userId)
+                .orElseThrow(() -> new UserNotFoundByIdException(userId));
 
-        UserEntity user = userRepository.findById(id)
-                .orElseThrow(() -> new UserNotFoundByIdException(id));
-
-        refreshTokenRepository.deleteAllByUserId(id);
+        refreshTokenRepository.deleteAllByUserId(userId);
         userRepository.delete(user);
 
-        log.info("User successfully deleted, userId={}", id);
+        log.info("User successfully deleted, userId={}", userId);
     }
 }

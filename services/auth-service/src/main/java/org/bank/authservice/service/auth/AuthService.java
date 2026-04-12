@@ -130,9 +130,7 @@ public class AuthService {
                 token.getUser().getId());
     }
 
-    public void logoutAll() {
-        Long userId = authCommonService.getUserId();
-
+    public void logoutAll(Long userId) {
         log.info("Logout all sessions for userId={}", userId);
 
         refreshTokenService.revokeAll(userId);

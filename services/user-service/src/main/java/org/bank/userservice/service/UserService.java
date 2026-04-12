@@ -7,6 +7,7 @@ import org.bank.userservice.dto.CreateUserRequest;
 import org.bank.userservice.dto.UserDto;
 import org.bank.userservice.entity.UserEntity;
 import org.bank.userservice.event.UserDeletedEvent;
+import org.bank.userservice.exception.UserAlreadyExistException;
 import org.bank.userservice.exception.UserNotFoundById;
 import org.bank.userservice.feign.AccountFeign;
 import org.bank.userservice.feign.BalanceFeign;
@@ -48,8 +49,14 @@ public class UserService {
 
     @Transactional
     public UserDto createUser(CreateUserRequest request) {
+        Long userId = authCommonService.getUserId();
+
+        if (userRepository.existsById(userId)) {
+            throw new UserAlreadyExistException(userId);
+        }
+
         UserEntity newUser = new UserEntity(
-                authCommonService.getUserId(),
+                userId,
                 request.getFirstName(),
                 request.getLastName(),
                 authCommonService.getUserEmail(),
@@ -60,8 +67,9 @@ public class UserService {
     }
 
     @Transactional(readOnly = true)
-        public List<AccountDto> getUserAccounts() {
-        return accountFeign.getUserAccounts().getBody();
+    public List<AccountDto> getUserAccounts() {
+        Long userId = authCommonService.getUserId();
+        return accountFeign.getUserAccounts(userId).getBody();
     }
 
     @Transactional(readOnly = true)
@@ -74,7 +82,6 @@ public class UserService {
         Long userId = authCommonService.getUserId();
         UserEntity user = userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundById(userId));
-        userRepository.delete(user);
         eventPublisher.publishEvent(new UserDeletedEvent(userId));
     }
 }

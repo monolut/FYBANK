@@ -39,6 +39,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         return skip;
     }
 
+    @Override
     protected void doFilterInternal(
             HttpServletRequest request,
             HttpServletResponse response,
@@ -63,12 +64,24 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
             String userId = jwtService.extractUserId(jwt);
             String role = jwtService.extractRole(jwt);
+            String service = jwtService.extractService(jwt);
 
             if (SecurityContextHolder.getContext().getAuthentication() == null) {
 
+                Object principal;
+
+                if (service != null) {
+                    principal = service;
+                    log.debug("Authenticated service: {}", service);
+                } else {
+                    principal = Long.parseLong(userId);
+                    log.debug("Authenticated user: {}", userId);
+                }
+
+
                 UsernamePasswordAuthenticationToken authToken =
                         new UsernamePasswordAuthenticationToken(
-                                userId,
+                                principal,
                                 jwt,
                                 List.of(new SimpleGrantedAuthority("ROLE_" + role))
                         );

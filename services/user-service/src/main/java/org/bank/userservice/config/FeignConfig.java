@@ -1,6 +1,7 @@
 package org.bank.userservice.config;
 
 import feign.RequestInterceptor;
+import org.bank.authcommon.service.JwtService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.context.request.RequestContextHolder;
@@ -10,18 +11,10 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 public class FeignConfig {
 
     @Bean
-    public RequestInterceptor requestInterceptor() {
+    public RequestInterceptor requestInterceptor(JwtService jwtService) {
         return requestTemplate -> {
-            var attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
-
-            if(attributes == null) return;
-
-            var request = attributes.getRequest();
-
-            String authorization = request.getHeader("Authorization");
-            if (authorization != null) {
-                requestTemplate.header("Authorization", authorization);
-            }
+            String token = jwtService.generateServiceToken("user_service");
+            requestTemplate.header("Authorization", "Bearer " + token);
         };
     }
 

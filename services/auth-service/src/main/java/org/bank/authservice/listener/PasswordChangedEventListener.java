@@ -32,7 +32,7 @@ public class PasswordChangedEventListener {
 
         log.info("PasswordChangedEvent received, userId={}", userId);
         try {
-            authService.logoutAll();
+            authService.logoutAll(userId);
 
             log.info("All sessions invalidated after password change, userId={}", userId);
         } catch (Exception e) {

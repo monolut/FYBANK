@@ -71,19 +71,22 @@ public class AuthController {
         return ResponseEntity.noContent().build();
     }
 
-    @PostMapping("/logoutAll")
+    @PostMapping("/{userId}/logoutAll")
     public ResponseEntity<Void> logoutAll(
+            @PathVariable Long userId
     ) {
 
         log.info("POST /auth/logout/ request received");
 
-        authService.logoutAll();
+        authService.logoutAll(userId);
         return ResponseEntity.noContent().build();
     }
 
-    @DeleteMapping("/internal/delete")
-    public ResponseEntity<Void> deleteUserData() {
-        userService.deleteUser();
+    @DeleteMapping("/internal/{userId}/delete")
+    public ResponseEntity<Void> deleteUserData(
+            @PathVariable Long userId
+    ) {
+        userService.deleteUser(userId);
         return ResponseEntity.noContent().build();
     }
 }

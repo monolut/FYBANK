@@ -36,7 +36,7 @@ public class JwtService {
         String token = Jwts.builder()
                 .setSubject(userId.toString())
                 .claim("email", email)
-                .claim("role", "ROLE_" + role)
+                .claim("role", role)
                 .setIssuedAt(new Date(System.currentTimeMillis()))
                 .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60))
                 .signWith(getSigninKey(), SignatureAlgorithm.HS256)
@@ -45,6 +45,16 @@ public class JwtService {
         log.debug("Access token successfully created for userId={}", userId);
 
         return token;
+    }
+
+    public String generateServiceToken(String service) {
+            return Jwts.builder()
+                    .claim("service", service)
+                    .claim("role", "SERVICE")
+                    .setIssuedAt(new Date())
+                    .setExpiration(new Date(System.currentTimeMillis() + 3600000))
+                    .signWith(getSigninKey(), SignatureAlgorithm.HS256)
+                    .compact();
     }
 
     public String extractUserId(String token) {
@@ -66,6 +76,12 @@ public class JwtService {
         log.trace("Extracting role from JWT");
 
         return extractAllClaims(token).get("role", String.class);
+    }
+
+    public String extractService(String token) {
+        log.trace("Extracting service from JWT");
+
+        return extractAllClaims(token).get("service", String.class);
     }
 
     public boolean validateToken(String token) {
