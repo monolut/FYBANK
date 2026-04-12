@@ -1,5 +1,6 @@
 package org.bank.accountservice.controller;
 
+import jakarta.validation.Valid;
 import org.bank.accountservice.dto.IbanTransferRequest;
 import org.bank.accountservice.dto.TransactionDto;
 import org.bank.accountservice.dto.TransferRequest;
@@ -22,7 +23,7 @@ public class TransferController {
 
     @PostMapping
     public ResponseEntity<TransactionDto> executeTransfer(
-            @RequestBody TransferRequest request
+            @RequestBody @Valid TransferRequest request
     ) {
         return ResponseEntity.ok(
                 transferService.executeTransfer(
@@ -34,7 +35,7 @@ public class TransferController {
 
     @PostMapping("/iban")
     public ResponseEntity<TransactionDto> executeTransferWithIban(
-            @RequestBody IbanTransferRequest request
+            @RequestBody @Valid IbanTransferRequest request
     ) {
 
         return ResponseEntity.ok(

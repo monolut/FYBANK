@@ -1,5 +1,6 @@
 package org.bank.accountservice.controller;
 
+import jakarta.validation.Valid;
 import org.bank.accountservice.dto.AccountDto;
 import org.bank.accountservice.dto.CreateAccountRequest;
 import org.bank.accountservice.dto.TransactionDto;
@@ -51,7 +52,7 @@ public class AccountController {
 
     @PostMapping
     public ResponseEntity<AccountDto> createAccount(
-            @RequestBody CreateAccountRequest request
+            @RequestBody @Valid CreateAccountRequest request
             ) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(accountService.createAccount(request.getCurrency()));
