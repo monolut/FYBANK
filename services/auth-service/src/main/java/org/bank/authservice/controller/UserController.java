@@ -1,22 +1,19 @@
 package org.bank.authservice.controller;
 
 import jakarta.validation.Valid;
+import lombok.extern.slf4j.Slf4j;
 import org.bank.authservice.dto.UserDto;
 import org.bank.authservice.dto.auth.UpdatePasswordRequest;
 import org.bank.authservice.service.UserService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/v1/users")
 @CrossOrigin("*")
 public class UserController {
-
-    private static final Logger log =  LoggerFactory.getLogger(UserController.class);
 
     private final UserService userService;
 
@@ -25,6 +22,8 @@ public class UserController {
             UserService userService
     ) {
         this.userService = userService;
+
+        log.info("UserController initialized");
     }
 
     @GetMapping("/email")
@@ -33,13 +32,16 @@ public class UserController {
         log.info("GET /users/email request received for email={}", email);
 
         UserDto userDto = userService.getDtoByEmail(email);
+
+        log.info("GET /users/email completed successfully for email={}", email);
+
         return ResponseEntity.ok(userDto);
     }
 
     @PatchMapping("/update/password")
     public ResponseEntity<UserDto> updateUserPassword(
             @RequestBody UpdatePasswordRequest updatePasswordRequest
-            ) {
+    ) {
 
         log.info("PATCH /users/update/password request received");
 
@@ -47,6 +49,9 @@ public class UserController {
                 updatePasswordRequest.getOldPassword(),
                 updatePasswordRequest.getNewPassword()
         );
+
+        log.info("PATCH /users/update/password completed successfully");
+
         return ResponseEntity.ok(user);
     }
 
@@ -55,9 +60,14 @@ public class UserController {
             @Valid @RequestBody UserDto userDto
     ) {
 
-        log.info("PATCH /users request received");
+        log.info("PATCH /users request received for userId={}",
+                userDto.getId());
 
         userService.updateUserById(userDto);
+
+        log.info("PATCH /users completed successfully for userId={}",
+                userDto.getId());
+
         return ResponseEntity.ok(userDto);
     }
 }

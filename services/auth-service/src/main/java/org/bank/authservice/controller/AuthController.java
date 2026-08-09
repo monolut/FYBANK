@@ -1,5 +1,6 @@
 package org.bank.authservice.controller;
 
+import lombok.extern.slf4j.Slf4j;
 import org.bank.authservice.dto.auth.AuthRequest;
 import org.bank.authservice.dto.auth.AuthResponse;
 import org.bank.authservice.dto.auth.RegisterRequest;
@@ -11,12 +12,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/v1/auth")
 @CrossOrigin("*")
 public class AuthController {
-
-    private static final Logger log = LoggerFactory.getLogger(AuthController.class);
 
     private final AuthService authService;
     private final UserService userService;
@@ -25,6 +25,8 @@ public class AuthController {
     public AuthController(AuthService authService, UserService userService) {
         this.authService = authService;
         this.userService = userService;
+
+        log.info("AuthController initialized");
     }
 
     @PostMapping("/login")
@@ -35,7 +37,13 @@ public class AuthController {
         log.info("POST /auth/login request received for email={}",
                 authRequestDto.getUsername());
 
-        return ResponseEntity.ok(authService.login(authRequestDto));
+        ResponseEntity<AuthResponse> response =
+                ResponseEntity.ok(authService.login(authRequestDto));
+
+        log.info("POST /auth/login completed successfully for email={}",
+                authRequestDto.getUsername());
+
+        return response;
     }
 
     @PostMapping("/refresh")
@@ -45,7 +53,12 @@ public class AuthController {
 
         log.info("POST /auth/refresh request received");
 
-        return ResponseEntity.ok(authService.refreshToken(refreshToken));
+        ResponseEntity<AuthResponse> response =
+                ResponseEntity.ok(authService.refreshToken(refreshToken));
+
+        log.info("POST /auth/refresh completed successfully");
+
+        return response;
     }
 
     @PostMapping("/register")
@@ -57,6 +70,10 @@ public class AuthController {
                 dto.getEmail());
 
         authService.register(dto);
+
+        log.info("POST /auth/register completed successfully for email={}",
+                dto.getEmail());
+
         return ResponseEntity.noContent().build();
     }
 
@@ -68,6 +85,9 @@ public class AuthController {
         log.info("POST /auth/logout request received");
 
         authService.logout(refreshToken);
+
+        log.info("POST /auth/logout completed successfully");
+
         return ResponseEntity.noContent().build();
     }
 
@@ -76,9 +96,12 @@ public class AuthController {
             @PathVariable Long userId
     ) {
 
-        log.info("POST /auth/logout/ request received");
+        log.info("POST /auth/{}/logoutAll request received", userId);
 
         authService.logoutAll(userId);
+
+        log.info("POST /auth/{}/logoutAll completed successfully", userId);
+
         return ResponseEntity.noContent().build();
     }
 
@@ -86,7 +109,13 @@ public class AuthController {
     public ResponseEntity<Void> deleteUserData(
             @PathVariable Long userId
     ) {
+
+        log.info("DELETE /auth/internal/{}/delete request received", userId);
+
         userService.deleteUser(userId);
+
+        log.info("DELETE /auth/internal/{}/delete completed successfully", userId);
+
         return ResponseEntity.noContent().build();
     }
 }

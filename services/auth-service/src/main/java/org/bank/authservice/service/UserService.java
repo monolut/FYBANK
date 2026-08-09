@@ -1,5 +1,6 @@
 package org.bank.authservice.service;
 
+import lombok.extern.slf4j.Slf4j;
 import org.bank.authcommon.service.AuthCommonService;
 import org.bank.authservice.dto.UserDto;
 import org.bank.authservice.entity.RoleEntity;
@@ -23,10 +24,9 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 public class UserService {
-
-    private static final Logger log = LoggerFactory.getLogger(UserService.class);
 
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;

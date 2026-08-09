@@ -1,6 +1,6 @@
 package org.bank.accountservice.config;
 
-import org.bank.authcommon.filter.JwtAuthenticationFilter;
+import org.bank.accountservice.security.JwtAuthenticationFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;

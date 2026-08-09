@@ -1,21 +1,40 @@
 package org.bank.userservice.config;
 
 import feign.RequestInterceptor;
+import lombok.extern.slf4j.Slf4j;
 import org.bank.authcommon.service.JwtService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.web.context.request.RequestContextHolder;
-import org.springframework.web.context.request.ServletRequestAttributes;
 
+@Slf4j
 @Configuration
 public class FeignConfig {
 
     @Bean
     public RequestInterceptor requestInterceptor(JwtService jwtService) {
+
+        log.info("Creating Feign RequestInterceptor for service-to-service authentication");
+
         return requestTemplate -> {
-            String token = jwtService.generateServiceToken("user_service");
-            requestTemplate.header("Authorization", "Bearer " + token);
+
+            log.debug(
+                    "Creating service token for Feign request: method={}, url={}",
+                    requestTemplate.method(),
+                    requestTemplate.url()
+            );
+
+            String token = jwtService.createServiceToken("user_service");
+
+            requestTemplate.header(
+                    "Authorization",
+                    "Bearer " + token
+            );
+
+            log.debug(
+                    "Authorization header added to Feign request: method={}, url={}",
+                    requestTemplate.method(),
+                    requestTemplate.url()
+            );
         };
     }
-
 }

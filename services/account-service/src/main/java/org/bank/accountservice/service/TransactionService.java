@@ -1,5 +1,6 @@
 package org.bank.accountservice.service;
 
+import lombok.extern.slf4j.Slf4j;
 import org.bank.accountservice.dto.TransactionDto;
 import org.bank.accountservice.entity.TransactionEntity;
 import org.bank.accountservice.enums.TransactionStatus;
@@ -15,6 +16,7 @@ import java.math.BigDecimal;
 import java.util.Currency;
 import java.util.List;
 
+@Slf4j
 @Service
 public class TransactionService {
 
@@ -31,6 +33,8 @@ public class TransactionService {
         this.transactionRepository = transactionRepository;
         this.transactionMapper = transactionMapper;
         this.transactionReferenceGenerator = transactionReferenceGenerator;
+
+        log.info("TransactionService initialized");
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
@@ -42,6 +46,17 @@ public class TransactionService {
             TransactionType type,
             TransactionStatus status
     ) {
+
+        log.info(
+                "Recording transaction: senderId={}, recipientId={}, amount={}, currency={}, type={}, status={}",
+                senderId,
+                recipientId,
+                amount,
+                currency,
+                type,
+                status
+        );
+
         TransactionEntity transaction = new TransactionEntity(
                 senderId,
                 recipientId,
@@ -52,16 +67,44 @@ public class TransactionService {
                 transactionReferenceGenerator.generate()
         );
 
-        return transactionRepository.save(transaction);
+        TransactionEntity saved = transactionRepository.save(transaction);
+
+        log.info(
+                "Transaction successfully recorded: transactionId={}, senderId={}, recipientId={}, type={}, status={}",
+                saved.getId(),
+                senderId,
+                recipientId,
+                type,
+                status
+        );
+
+        return saved;
     }
 
     @Transactional(readOnly = true)
     public List<TransactionDto> getHistory(Long accountId) {
-        return transactionRepository.findBySenderAccountIdOrRecipientAccountId(accountId, accountId)
-                .stream()
-                .map(transactionMapper::toDto)
-                .toList();
 
+        log.debug(
+                "Fetching transaction history for accountId={}",
+                accountId
+        );
+
+        List<TransactionDto> transactions =
+                transactionRepository
+                        .findBySenderAccountIdOrRecipientAccountId(
+                                accountId,
+                                accountId
+                        )
+                        .stream()
+                        .map(transactionMapper::toDto)
+                        .toList();
+
+        log.debug(
+                "Transaction history fetched for accountId={}, transactionCount={}",
+                accountId,
+                transactions.size()
+        );
+
+        return transactions;
     }
-
 }

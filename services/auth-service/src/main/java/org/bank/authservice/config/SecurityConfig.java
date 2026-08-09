@@ -1,6 +1,7 @@
 package org.bank.authservice.config;
 
-import org.bank.authcommon.filter.JwtAuthenticationFilter;
+import lombok.extern.slf4j.Slf4j;
+import org.bank.authservice.security.JwtAuthenticationFilter;
 import org.bank.authservice.service.auth.UserDetailsServiceImpl;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -15,6 +16,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
+@Slf4j
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
@@ -28,11 +30,15 @@ public class SecurityConfig {
     ) {
         this.userDetailsService = userDetailsService;
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
+
+        log.info("SecurityConfig initialized");
     }
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        return http
+        log.info("Configuring Spring Security filter chain");
+
+        SecurityFilterChain filterChain = http
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/v1/auth/**").permitAll()
@@ -43,23 +49,40 @@ public class SecurityConfig {
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .authenticationProvider(authenticationProvider())
                 .build();
+
+        log.info("Spring Security filter chain configured successfully");
+
+        return filterChain;
     }
 
     @Bean
     public PasswordEncoder passwordEncoder() {
+        log.debug("Creating BCrypt PasswordEncoder");
+
         return new BCryptPasswordEncoder();
     }
 
     @Bean
     public DaoAuthenticationProvider authenticationProvider() {
+        log.debug("Creating DaoAuthenticationProvider");
+
         DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
         provider.setUserDetailsService(userDetailsService);
         provider.setPasswordEncoder(passwordEncoder());
+
+        log.info("DaoAuthenticationProvider configured successfully");
+
         return provider;
     }
 
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
-        return config.getAuthenticationManager();
+        log.debug("Creating AuthenticationManager");
+
+        AuthenticationManager authenticationManager = config.getAuthenticationManager();
+
+        log.info("AuthenticationManager created successfully");
+
+        return authenticationManager;
     }
 }

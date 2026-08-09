@@ -3,125 +3,109 @@ package org.bank.authcommon.service;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.nio.charset.StandardCharsets;
 import java.security.Key;
+import java.time.Instant;
 import java.util.Date;
+import java.util.Map;
+import java.util.function.Function;
 
 @Service
 public class JwtService {
 
-    private static final Logger log = LoggerFactory.getLogger(JwtService.class);
+    private final Key signingKey;
+    private final long accessTokenExpiration;
 
-    private final String secret;
-
-    public JwtService(@Value("${secret-key}") String secret){
-        this.secret = secret;
-    }
-
-    public String createAccessToken(
-            Long userId,
-            String email,
-            String role
+    public JwtService(
+            @Value("${secret-key}") String secret,
+            @Value("${jwt.access.expiration:3600000}") long accessTokenExpiration
     ) {
+        this.signingKey = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
+        this.accessTokenExpiration = accessTokenExpiration;
+    }
 
-        log.debug("Creating access token for userId={}", userId);
+    public String createAccessToken(Long userId,
+                                    String email,
+                                    String role) {
 
-        String token = Jwts.builder()
-                .setSubject(userId.toString())
-                .claim("email", email)
-                .claim("role", role)
-                .setIssuedAt(new Date(System.currentTimeMillis()))
-                .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60))
-                .signWith(getSigninKey(), SignatureAlgorithm.HS256)
+        return createToken(
+                userId.toString(),
+                Map.of(
+                        "email", email,
+                        "role", role
+                )
+        );
+    }
+
+    public String createServiceToken(String serviceName) {
+
+        return createToken(
+                serviceName,
+                Map.of(
+                        "service", serviceName,
+                        "role", "SERVICE"
+                )
+        );
+    }
+
+    private String createToken(String subject,
+                               Map<String, Object> claims) {
+
+        Instant now = Instant.now();
+
+        return Jwts.builder()
+                .subject(subject)
+                .claims(claims)
+                .issuedAt(Date.from(now))
+                .expiration(Date.from(now.plusMillis(accessTokenExpiration)))
+                .signWith(signingKey)
                 .compact();
-
-        log.debug("Access token successfully created for userId={}", userId);
-
-        return token;
-    }
-
-    public String generateServiceToken(String service) {
-            return Jwts.builder()
-                    .claim("service", service)
-                    .claim("role", "SERVICE")
-                    .setIssuedAt(new Date())
-                    .setExpiration(new Date(System.currentTimeMillis() + 3600000))
-                    .signWith(getSigninKey(), SignatureAlgorithm.HS256)
-                    .compact();
-    }
-
-    public String extractUserId(String token) {
-
-        log.trace("Extractin user id from JWT");
-
-        return extractAllClaims(token).getSubject();
-    }
-
-    public String extractEmail(String token) {
-
-        log.trace("Extracting username from JWT");
-
-        return extractAllClaims(token).get("email", String.class);
-    }
-
-    public String extractRole(String token) {
-
-        log.trace("Extracting role from JWT");
-
-        return extractAllClaims(token).get("role", String.class);
-    }
-
-    public String extractService(String token) {
-        log.trace("Extracting service from JWT");
-
-        return extractAllClaims(token).get("service", String.class);
     }
 
     public boolean validateToken(String token) {
+
         try {
             Claims claims = extractAllClaims(token);
-            return !claims.getExpiration().before(new Date());
-        } catch (JwtException | IllegalArgumentException e) {
+
+            return claims.getExpiration().after(new Date());
+
+        } catch (JwtException | IllegalArgumentException ex) {
             return false;
         }
     }
 
-    private Claims extractAllClaims(String token) {
+    public String extractUserId(String token) {
+        return extractClaim(token, Claims::getSubject);
+    }
 
-        log.trace("Parsing JWT claims");
+    public String extractEmail(String token) {
+        return extractClaim(token, claims -> claims.get("email", String.class));
+    }
 
-        return Jwts.parserBuilder()
-                .setSigningKey(getSigninKey())
+    public String extractRole(String token) {
+        return extractClaim(token, claims -> claims.get("role", String.class));
+    }
+
+    public String extractService(String token) {
+        return extractClaim(token, claims -> claims.get("service", String.class));
+    }
+
+    public Claims extractAllClaims(String token) {
+
+        return Jwts.parser()
+                .verifyWith((javax.crypto.SecretKey) signingKey)
                 .build()
-                .parseClaimsJws(token)
-                .getBody();
+                .parseSignedClaims(token)
+                .getPayload();
     }
 
-    private Key getSigninKey() {
-        byte[] apiKeySecretBytes = secret.getBytes(StandardCharsets.UTF_8);
-        return Keys.hmacShaKeyFor(apiKeySecretBytes);
-    }
+    public <T> T extractClaim(String token,
+                              Function<Claims, T> resolver) {
 
-    private Boolean isTokenExpired(String token) {
-
-        boolean expired =
-                extractExpiration(token).before(new Date());
-
-        if (expired) {
-            log.debug("JWT token is expired");
-        }
-
-        return expired;
-    }
-
-    private Date extractExpiration(String token) {
-        return extractAllClaims(token).getExpiration();
+        return resolver.apply(extractAllClaims(token));
     }
 }

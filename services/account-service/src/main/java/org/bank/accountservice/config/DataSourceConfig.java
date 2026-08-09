@@ -1,5 +1,6 @@
 package org.bank.accountservice.config;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -7,6 +8,7 @@ import org.springframework.jdbc.datasource.DriverManagerDataSource;
 
 import javax.sql.DataSource;
 
+@Slf4j
 @Configuration
 public class DataSourceConfig {
 
@@ -24,11 +26,19 @@ public class DataSourceConfig {
 
     @Bean
     public DataSource getDataSource() {
+
+        log.info("Initializing AccountService DataSource");
+        log.debug("Database driver: {}", driverClassName);
+        log.debug("Database username: {}", username);
+
         DriverManagerDataSource dataSource = new DriverManagerDataSource();
+
         dataSource.setDriverClassName(driverClassName);
         dataSource.setUrl(url);
         dataSource.setUsername(username);
         dataSource.setPassword(password);
+
+        log.info("AccountService DataSource initialized successfully");
 
         return dataSource;
     }

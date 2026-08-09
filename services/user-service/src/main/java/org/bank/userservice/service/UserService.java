@@ -1,5 +1,6 @@
 package org.bank.userservice.service;
 
+import lombok.extern.slf4j.Slf4j;
 import org.bank.authcommon.service.AuthCommonService;
 import org.bank.userservice.dto.AccountDto;
 import org.bank.userservice.dto.BalanceDto;
@@ -20,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
+@Slf4j
 @Service
 public class UserService {
 
@@ -45,11 +47,16 @@ public class UserService {
         this.authCommonService = authCommonService;
         this.accountFeign = accountFeign;
         this.balanceFeign = balanceFeign;
+
+        log.info("UserService initialized");
     }
 
     @Transactional
     public UserDto createUser(CreateUserRequest request) {
+
         Long userId = authCommonService.getUserId();
+
+        log.info("Creating user with userId={}", userId);
 
         if (userRepository.existsById(userId)) {
             throw new UserAlreadyExistException(userId);
@@ -62,26 +69,67 @@ public class UserService {
                 authCommonService.getUserEmail(),
                 request.getPhoneNumber()
         );
+
+        log.debug("Saving new user with userId={}", userId);
+
         UserEntity saved = userRepository.save(newUser);
+
+        log.info("User successfully created, userId={}", userId);
+
         return userMapper.toDto(saved);
     }
 
     @Transactional(readOnly = true)
     public List<AccountDto> getUserAccounts() {
+
         Long userId = authCommonService.getUserId();
-        return accountFeign.getUserAccounts(userId).getBody();
+
+        log.info("Fetching accounts for userId={}", userId);
+
+        List<AccountDto> accounts =
+                accountFeign.getUserAccounts(userId).getBody();
+
+        log.info(
+                "Accounts successfully fetched for userId={}, accountCount={}",
+                userId,
+                accounts != null ? accounts.size() : 0
+        );
+
+        return accounts;
     }
 
     @Transactional(readOnly = true)
     public BalanceDto getBalanceByAccountId(Long accountId) {
-        return balanceFeign.getBalanceByAccountId(accountId).getBody();
+
+        log.info("Fetching balance for accountId={}", accountId);
+
+        BalanceDto balance =
+                balanceFeign.getBalanceByAccountId(accountId).getBody();
+
+        log.info(
+                "Balance successfully fetched for accountId={}",
+                accountId
+        );
+
+        return balance;
     }
 
     @Transactional
     public void deleteUser() {
+
         Long userId = authCommonService.getUserId();
+
+        log.info("Deleting user with userId={}", userId);
+
         UserEntity user = userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundById(userId));
-        eventPublisher.publishEvent(new UserDeletedEvent(userId));
+
+        log.debug("User found, publishing UserDeletedEvent for userId={}", userId);
+
+        eventPublisher.publishEvent(
+                new UserDeletedEvent(userId)
+        );
+
+        log.info("User deletion event published for userId={}", userId);
     }
 }
