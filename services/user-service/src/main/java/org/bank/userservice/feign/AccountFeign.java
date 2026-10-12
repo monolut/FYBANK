@@ -12,7 +12,7 @@ import java.util.List;
 
 @FeignClient(
         name = "account-service",
-        url = "http://localhost:8081/api/v1/account",
+        url = "${clients.account-service.url}",
         configuration = FeignConfig.class
 )
 public interface AccountFeign {

@@ -15,5 +15,5 @@ public class RoleDto {
     private Long id;
 
     @NotNull(message = "Role name cannot be null")
-    private Role role;
+    private Role roleName;
 }

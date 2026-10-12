@@ -9,7 +9,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 @Data
 @NoArgsConstructor
@@ -19,7 +19,7 @@ public class UserDto {
     private Long id;
 
     @NotNull(message = "Register date cannot be null")
-    private LocalDateTime registerDate;
+    private Instant registerDate;
 
     @NotBlank(message = "Email cannot be blank")
     @Email(message = "Email should have email type")

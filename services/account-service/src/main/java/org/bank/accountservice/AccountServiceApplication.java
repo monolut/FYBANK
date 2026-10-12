@@ -2,12 +2,15 @@ package org.bank.accountservice;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.cloud.openfeign.EnableFeignClients;
 import org.springframework.context.annotation.ComponentScan;
 
 @SpringBootApplication
+@EnableFeignClients
 @ComponentScan(basePackages = {
         "org.bank.accountservice",
-        "org.bank.authcommon"
+        "org.bank.authcommon",
+        "org.bank.common"
 })
 public class AccountServiceApplication {
 

@@ -89,7 +89,7 @@ public class AuthService {
 
         return new AuthResponse(
                 newAccessToken,
-                newRefreshToken.getToken()
+                newRefreshToken.getTokenHash()
         );
     }
 
@@ -149,7 +149,7 @@ public class AuthService {
 
         return new AuthResponse(
                 accessToken,
-                refreshToken.getToken()
+                refreshToken.getTokenHash()
         );
     }
 
@@ -170,11 +170,11 @@ public class AuthService {
         );
     }
 
-    public void logoutAll(Long userId) {
+    public void revokeAllRefreshTokens(Long userId) {
 
         log.info("Logout all sessions for userId={}", userId);
 
-        refreshTokenService.revokeAll(userId);
+        refreshTokenService.revokeAllRefreshTokens(userId);
 
         log.info("All refresh tokens revoked for userId={}", userId);
     }

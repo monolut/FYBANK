@@ -98,7 +98,7 @@ public class AuthController {
 
         log.info("POST /auth/{}/logoutAll request received", userId);
 
-        authService.logoutAll(userId);
+        authService.revokeAllRefreshTokens(userId);
 
         log.info("POST /auth/{}/logoutAll completed successfully", userId);
 

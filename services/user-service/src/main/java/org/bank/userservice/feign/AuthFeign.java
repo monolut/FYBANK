@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 
 @FeignClient(
         name = "auth-service",
-        url = "http://localhost:8080/api/v1/auth",
+        url = "${clients.auth-service.url}",
         configuration = FeignConfig.class
 )
 public interface AuthFeign {

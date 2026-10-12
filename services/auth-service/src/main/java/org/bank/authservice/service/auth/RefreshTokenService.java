@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -33,11 +34,11 @@ public class RefreshTokenService {
 
         log.debug("Creating refresh token for userId={}", user.getId());
 
-        RefreshTokenEntity token = new RefreshTokenEntity();
-        token.setUser(user);
-        token.setToken(UUID.randomUUID().toString());
-        token.setExpiresAt(LocalDateTime.now().plusSeconds(30));
-        token.setRevoked(false);
+        RefreshTokenEntity token = new RefreshTokenEntity(
+                UUID.randomUUID().toString(),
+                Instant.now().plusSeconds(30),
+                user
+        );
 
         log.debug(
                 "Refresh token entity prepared for userId={}, expiresAt={}",
@@ -62,7 +63,7 @@ public class RefreshTokenService {
         log.debug("Validating refresh token");
 
         RefreshTokenEntity token = refreshTokenRepository
-                .findByToken(tokenValue)
+                .findByTokenHash(tokenValue)
                 .orElseThrow(() -> {
                     log.warn("Refresh token validation failed: token not found");
                     return new RuntimeException("Invalid refresh token");
@@ -85,7 +86,7 @@ public class RefreshTokenService {
             throw new RuntimeException("Refresh token revoked");
         }
 
-        if (token.getExpiresAt().isBefore(LocalDateTime.now())) {
+        if (token.getExpiresAt().isBefore(Instant.now())) {
 
             log.warn(
                     "Refresh token validation failed: token expired for userId={}, expiredAt={}",
@@ -112,7 +113,7 @@ public class RefreshTokenService {
                 token.getUser().getId()
         );
 
-        token.setRevoked(true);
+        token.revoke();
 
         log.debug(
                 "Refresh token marked as revoked for userId={}",
@@ -121,14 +122,15 @@ public class RefreshTokenService {
     }
 
     @Transactional
-    public void revokeAll(Long userId) {
+    public void revokeAllRefreshTokens(Long userId) {
 
-        log.info("Revoking all refresh tokens for userId={}", userId);
+        Instant now = Instant.now();
 
-        refreshTokenRepository.revokeAllByUserId(userId);
+        refreshTokenRepository
+                .revokeAllByUserId(userId);
 
         log.info(
-                "All refresh tokens revoked successfully for userId={}",
+                "Revoke refresh tokens for userId={}",
                 userId
         );
     }

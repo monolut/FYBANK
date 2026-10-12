@@ -1,12 +1,11 @@
 package org.bank.accountservice.dto;
 
-import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
-
-import java.util.Currency;
+import org.bank.common.CurrencyCode;
 
 @Data
 public class CreateAccountRequest {
-    @NotBlank(message = "Currency can not be blank")
-    Currency currency;
+    @NotNull(message = "Currency is required")
+    CurrencyCode currency;
 }

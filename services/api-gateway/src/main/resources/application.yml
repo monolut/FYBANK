@@ -28,16 +28,27 @@ spring:
           filters:
             - JwtAuthentication
 
+        - id: balance-service
+          uri: http://localhost:8084
+          predicates:
+            - Path=/api/v1/balance/**
+          filters:
+            - JwtAuthentication
+
         - id: transfer-service
-          uri: http://localhost:8083
+          uri: http://localhost:8085
           predicates:
             - Path=/api/v1/transfer/**
           filters:
             - JwtAuthentication
 
-        - id: balance-service
-          uri: http://localhost:8083
+        - id: transaction-service
+          uri: http://localhost:8086
           predicates:
-            - Path=/api/v1/balance/**
-          filters:
-            - JwtAuthentication
+            - Path=/api/v1/transaction/**
+
+        - id: currency-service
+          uri: http://localhost:8087
+          predicates:
+            - Path=/api/v1/crrency/**
+

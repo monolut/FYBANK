@@ -103,11 +103,11 @@ public class UserService {
                     return RoleNotFoundException.byRole(Role.USER);
                 });
 
-        UserEntity user = new UserEntity();
-
-        user.setEmail(email);
-        user.setPassword(passwordEncoder.encode(password));
-        user.setRole(role);
+        UserEntity user = new UserEntity(
+                email,
+                passwordEncoder.encode(password),
+                role
+        );
 
         UserEntity savedUser = userRepository.save(user);
 
@@ -126,7 +126,7 @@ public class UserService {
                 .orElseThrow(() -> new UserNotFoundByIdException(id));
 
         if (userDto.getEmail() != null && !userDto.getEmail().isBlank()) {
-            userEntity.setEmail(userDto.getEmail());
+            userEntity.changeEmail(userDto.getEmail());
             log.debug("User email updated for userId={}", id);
         }
 
@@ -151,7 +151,7 @@ public class UserService {
             throw new BadCredentialsException("Old password is incorrect");
         }
 
-        user.setPassword(passwordEncoder.encode(newPassword));
+        user.changePassword(passwordEncoder.encode(newPassword));
 
         applicationEventPublisher.publishEvent(
                 new PasswordChangedEvent(user.getId())
@@ -169,7 +169,7 @@ public class UserService {
         UserEntity user = userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundByIdException(userId));
 
-        refreshTokenRepository.deleteAllByUserId(userId);
+        refreshTokenRepository.deleteAllByUser_Id(userId);
         userRepository.delete(user);
 
         log.info("User successfully deleted, userId={}", userId);

@@ -25,6 +25,12 @@
     <module>services/user-service</module>
     <module>services/account-service</module>
     <module>services/api-gateway</module>
+    <module>services/balance-service</module>
+    <module>libs/common-domain</module>
+      <module>services/transfer-service</module>
+    <module>services/transaction-service</module>
+    <module>services/iban-service</module>
+      <module>services/currency-service</module>
 
   </modules>
 

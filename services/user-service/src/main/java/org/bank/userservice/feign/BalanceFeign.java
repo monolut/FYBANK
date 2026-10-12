@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 
 @FeignClient(
         name = "balance-service",
-        url = "http://localhost:8081/api/v1/balance",
+        url = "${clients.balance-service.url}",
         configuration = FeignConfig.class
 )
 public interface BalanceFeign {

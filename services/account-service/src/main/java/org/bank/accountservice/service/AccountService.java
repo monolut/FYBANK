@@ -1,51 +1,36 @@
 package org.bank.accountservice.service;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.bank.accountservice.dto.AccountDto;
+import org.bank.accountservice.client.BalanceClient;
+import org.bank.common.AccountDto;
 import org.bank.accountservice.entity.AccountEntity;
-import org.bank.accountservice.entity.BalanceEntity;
-import org.bank.accountservice.enums.AccountStatus;
-import org.bank.accountservice.exception.AccountBalanceNotZeroException;
-import org.bank.accountservice.exception.AccountNotFoundByIdException;
 import org.bank.accountservice.mapper.AccountMapper;
 import org.bank.accountservice.repository.AccountRepository;
-import org.bank.accountservice.repository.BalanceRepository;
 import org.bank.authcommon.service.AuthCommonService;
+import org.bank.common.*;
+import org.bank.common.exception.AccountBalanceNotZeroException;
+import org.bank.common.exception.AccountNotFoundByIban;
+import org.bank.common.exception.AccountNotFoundByIdException;
+import org.bank.common.exception.CurrencyNotFoundByAccountId;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.util.Currency;
 import java.util.List;
 
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class AccountService {
 
     private final AccountRepository accountRepository;
     private final AccountMapper accountMapper;
-    private final BalanceService balanceService;
+    private final BalanceClient balanceClient;
     private final AuthCommonService authCommonService;
-    private final BalanceRepository balanceRepository;
-
-    public AccountService(
-            AccountRepository accountRepository,
-            AccountMapper accountMapper,
-            BalanceService balanceService,
-            AuthCommonService authCommonService,
-            BalanceRepository balanceRepository
-    ) {
-        this.accountRepository = accountRepository;
-        this.accountMapper = accountMapper;
-        this.balanceService = balanceService;
-        this.authCommonService = authCommonService;
-        this.balanceRepository = balanceRepository;
-
-        log.info("AccountService initialized");
-    }
 
     @Transactional
-    public AccountDto createAccount(Currency currency) {
+    public AccountDto createAccount(CurrencyCode currency) {
 
         Long userId = authCommonService.getUserId();
 
@@ -55,21 +40,23 @@ public class AccountService {
                 currency
         );
 
-        BalanceEntity balance = balanceService.createInitialBalance();
-
         log.debug(
                 "Initial balance created for userId={}",
                 userId
         );
 
-        AccountEntity account = new AccountEntity();
-        account.setUserId(userId);
-        account.setBalance(balance);
-        account.setStatus(AccountStatus.ACTIVE);
-        account.setIban(IbanGenerator.generateIban("RO"));
-        account.setCurrency(currency);
+        AccountEntity account = new AccountEntity(
+                userId,
+                IbanGenerator.generateIban("RO"),
+                currency,
+                AccountStatus.ACTIVE
+        );
 
         accountRepository.save(account);
+
+        balanceClient.createInitialBalance(
+                new CreateBalanceRequest(account.getId(), currency)
+        );
 
         log.info(
                 "Account successfully created: accountId={}, userId={}, currency={}",
@@ -86,11 +73,12 @@ public class AccountService {
 
         log.info("Closing account, accountId={}", accountId);
 
-        AccountEntity account = accountRepository.findByIdWithBalance(accountId)
-                .orElseThrow(() -> new AccountNotFoundByIdException(accountId));
+        AccountEntity account = getAccountEntity(accountId);
 
-        BigDecimal actualBalance = account.getBalance().getActual();
-        BigDecimal reservedBalance = account.getBalance().getReserved();
+        BalanceDto balance = balanceClient.getBalanceByAccountId(accountId);
+
+        BigDecimal actualBalance = balance.getActual().getAmount();
+        BigDecimal reservedBalance = balance.getReserved().getAmount();
 
         log.debug(
                 "Account balances before closing: accountId={}, actual={}, reserved={}",
@@ -108,6 +96,8 @@ public class AccountService {
 
             accountRepository.delete(account);
 
+            balanceClient.deleteBalanceByAccountId(accountId);
+
             log.info(
                     "Account successfully closed, accountId={}",
                     accountId
@@ -122,7 +112,7 @@ public class AccountService {
 
         AccountEntity account = getAccountEntity(accountId);
 
-        account.setStatus(AccountStatus.BLOCKED);
+        account.freeze();
 
         log.info(
                 "Account successfully frozen, accountId={}",
@@ -137,7 +127,7 @@ public class AccountService {
 
         AccountEntity account = getAccountEntity(accountId);
 
-        account.setStatus(AccountStatus.ACTIVE);
+        account.unfreeze();
 
         log.info(
                 "Account successfully unfrozen, accountId={}",
@@ -150,14 +140,32 @@ public class AccountService {
 
         log.debug("Fetching account, accountId={}", accountId);
 
+        AccountDto account = accountMapper.toDto(getAccountEntity(accountId));
+
+        BalanceDto balance = balanceClient.getBalanceByAccountId(accountId);
+
+        account.setBalance(balance);
+
+        log.debug("Account successfully fetched, accountId={}", accountId);
+
+        return account;
+    }
+
+    @Transactional(readOnly = true)
+    public AccountDto getAccountByIban(String iban) {
+
+        log.debug("Fetching account, iban={}", iban);
+
         AccountDto account = accountMapper.toDto(
-                getAccountEntity(accountId)
+                accountRepository.findByIban(iban)
+                        .orElseThrow(() -> new AccountNotFoundByIban(iban))
         );
 
-        log.debug(
-                "Account successfully fetched, accountId={}",
-                accountId
-        );
+        BalanceDto balance = balanceClient.getBalanceByAccountId(account.getId());
+
+        account.setBalance(balance);
+
+        log.debug("Account successfully fetched, iban={}", iban);
 
         return account;
     }
@@ -170,17 +178,29 @@ public class AccountService {
                 userId
         );
 
-        List<AccountDto> accounts = accountMapper.toDtoList(
-                accountRepository.findAccountEntitiesByUserId(userId)
-        );
+        List<AccountEntity> accounts = accountRepository.findAllByUserId(userId);
 
-        log.debug(
-                "Accounts fetched for userId={}, accountCount={}",
-                userId,
-                accounts.size()
-        );
+        return accounts.stream()
+                        .map(account -> {
+                                    BalanceDto balance =
+                                            balanceClient.getBalanceByAccountId(account.getId());
 
-        return accounts;
+                                    return new AccountDto(
+                                            account.getId(),
+                                            userId,
+                                            account.getIban(),
+                                            account.getStatus(),
+                                            account.getCurrency(),
+                                            balance,
+                                            account.getCreatedAt()
+                                    );
+                                }).toList();
+    }
+
+    @Transactional(readOnly = true)
+    public CurrencyCode getAccountCurrency(Long accountId) {
+        return accountRepository.findCurrencyById(accountId)
+                .orElseThrow(() -> new CurrencyNotFoundByAccountId(accountId));
     }
 
     @Transactional
@@ -191,14 +211,24 @@ public class AccountService {
                 userId
         );
 
-        accountRepository.deleteAllByUserId(userId);
+        List<AccountEntity> accounts = accountRepository.findAllByUserId(userId);
+
+        if (accounts.isEmpty()) {
+            return;
+        }
+
+        List<Long> accountIds = accounts.stream()
+                .map(AccountEntity::getId)
+                .toList();
+
+        balanceClient.deleteAllBalances(accountIds);
 
         log.debug(
-                "All accounts deleted for userId={}",
+                "All balances deleted for userId={}",
                 userId
         );
 
-        balanceRepository.deleteAllByUserId(userId);
+        accountRepository.deleteAll(accounts);
 
         log.info(
                 "All accounts and balances successfully deleted for userId={}",

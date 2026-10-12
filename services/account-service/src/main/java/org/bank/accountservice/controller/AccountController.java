@@ -1,68 +1,100 @@
 package org.bank.accountservice.controller;
 
 import jakarta.validation.Valid;
-import org.bank.accountservice.dto.AccountDto;
+import lombok.extern.slf4j.Slf4j;
 import org.bank.accountservice.dto.CreateAccountRequest;
-import org.bank.accountservice.dto.TransactionDto;
 import org.bank.accountservice.service.AccountService;
-import org.bank.accountservice.service.TransactionService;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.bank.authcommon.service.AuthCommonService;
+import org.bank.common.AccountDto;
+import org.bank.common.CurrencyCode;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Currency;
 import java.util.List;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/v1/account")
 @CrossOrigin("*")
 public class AccountController {
 
     private final AccountService accountService;
-    private final TransactionService transactionService;
+    private final AuthCommonService authCommonService;
 
-    @Autowired
-    public AccountController(AccountService accountService, TransactionService transactionService) {
+    public AccountController(
+            AccountService accountService,
+            AuthCommonService authCommonService) {
         this.accountService = accountService;
-        this.transactionService = transactionService;
+        this.authCommonService = authCommonService;
     }
 
     @GetMapping("/{accountId}")
     public ResponseEntity<AccountDto> getAccountById(
             @PathVariable Long accountId
     ) {
-        return ResponseEntity.ok(accountService.getAccountById(accountId));
+        log.debug("Getting account: accountId={}", accountId);
+
+        return ResponseEntity.ok(
+                accountService.getAccountById(accountId)
+        );
     }
 
-    @GetMapping("/user/{userId}")
-    public ResponseEntity<List<AccountDto>> getUserAccounts(
-            @PathVariable Long userId
+    @GetMapping("/iban")
+    public ResponseEntity<AccountDto> getAccountByIban(
+            @RequestBody String iban
     ) {
-        return ResponseEntity.ok(accountService.getUserAccounts(userId));
+        log.debug("Getting account by Iban: {}", iban);
+
+        return ResponseEntity.ok(
+                accountService.getAccountByIban(iban)
+        );
     }
 
-    @GetMapping("/history/{accountId}")
-    public ResponseEntity<List<TransactionDto>> getAccountHistory(
+    @GetMapping
+    public ResponseEntity<List<AccountDto>> getUserAccounts() {
+        Long userId = authCommonService.getUserId();
+        log.debug("Getting accounts for user: userId={}", userId);
+
+        return ResponseEntity.ok(
+                accountService.getUserAccounts(userId)
+        );
+    }
+
+    @GetMapping("/{accountId}/currency")
+    public ResponseEntity<CurrencyCode> getAccountCurrency(
             @PathVariable Long accountId
     ) {
-        return ResponseEntity.ok(transactionService.getHistory(accountId));
+        CurrencyCode currency = accountService.getAccountCurrency(accountId);
+        return ResponseEntity.ok(currency);
     }
 
     @PostMapping
     public ResponseEntity<AccountDto> createAccount(
             @RequestBody @Valid CreateAccountRequest request
-            ) {
+    ) {
+        log.info("Creating account: currency={}", request.getCurrency());
+
+        AccountDto account = accountService.createAccount(
+                request.getCurrency()
+        );
+
+        log.info("Account created successfully: accountId={}", account.getId());
+
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(accountService.createAccount(request.getCurrency()));
+                .body(account);
     }
 
     @PatchMapping("/{accountId}/freeze")
     public ResponseEntity<Void> freezeAccount(
             @PathVariable Long accountId
     ) {
+        log.info("Freezing account: accountId={}", accountId);
+
         accountService.freezeAccount(accountId);
+
+        log.info("Account frozen successfully: accountId={}", accountId);
+
         return ResponseEntity.noContent().build();
     }
 
@@ -70,23 +102,37 @@ public class AccountController {
     public ResponseEntity<Void> unFreezeAccount(
             @PathVariable Long accountId
     ) {
+        log.info("Unfreezing account: accountId={}", accountId);
+
         accountService.unFreezeAccount(accountId);
+
+        log.info("Account unfrozen successfully: accountId={}", accountId);
+
         return ResponseEntity.noContent().build();
     }
 
-    @DeleteMapping("/user/{userId}")
-    public ResponseEntity<Void> deleteAllAccounts(
-            @PathVariable Long userId
-    ) {
+    @DeleteMapping("/user")
+    public ResponseEntity<Void> deleteAllAccounts() {
+        Long userId = authCommonService.getUserId();
+        log.warn("Deleting all accounts for user: userId={}", userId);
+
         accountService.deleteAllAccounts(userId);
+
+        log.info("All accounts deleted successfully: userId={}", userId);
+
         return ResponseEntity.noContent().build();
     }
 
-    @DeleteMapping("/account/{accountId}")
+    @DeleteMapping("{accountId}/close")
     public ResponseEntity<Void> closeAccount(
             @PathVariable Long accountId
     ) {
+        log.info("Closing account: accountId={}", accountId);
+
         accountService.closeAccount(accountId);
+
+        log.info("Account closed successfully: accountId={}", accountId);
+
         return ResponseEntity.noContent().build();
     }
 }
