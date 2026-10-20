@@ -10,7 +10,7 @@ import org.bank.accountservice.repository.AccountRepository;
 import org.bank.authcommon.service.AuthCommonService;
 import org.bank.common.*;
 import org.bank.common.exception.AccountBalanceNotZeroException;
-import org.bank.common.exception.AccountNotFoundByIban;
+import org.bank.common.exception.AccountNotFoundByIbanException;
 import org.bank.common.exception.AccountNotFoundByIdException;
 import org.bank.common.exception.CurrencyNotFoundByAccountId;
 import org.springframework.stereotype.Service;
@@ -158,7 +158,7 @@ public class AccountService {
 
         AccountDto account = accountMapper.toDto(
                 accountRepository.findByIban(iban)
-                        .orElseThrow(() -> new AccountNotFoundByIban(iban))
+                        .orElseThrow(() -> new AccountNotFoundByIbanException(iban))
         );
 
         BalanceDto balance = balanceClient.getBalanceByAccountId(account.getId());

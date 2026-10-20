@@ -24,7 +24,7 @@ import java.time.Instant;
                 )
         }
 )
-public class AccountEntity {
+public class  AccountEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

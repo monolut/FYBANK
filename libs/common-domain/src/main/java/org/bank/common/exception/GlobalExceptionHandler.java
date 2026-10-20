@@ -34,7 +34,7 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(400).body(e.getMessage());
     }
 
-    @ExceptionHandler({AccountNotFoundByIdException.class, AccountNotFoundByIban.class})
+    @ExceptionHandler({AccountNotFoundByIdException.class, AccountNotFoundByIbanException.class})
     public ResponseEntity<String> handleAccountNotFound(RuntimeException e) {
         return ResponseEntity.status(404).body(e.getMessage());
     }
