@@ -3,18 +3,21 @@ package org.bank.transactionservice.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.bank.authcommon.service.AuthCommonService;
-import org.bank.common.AccountDto;
-import org.bank.common.TransactionDto;
+import org.bank.common.*;
 import org.bank.common.exception.AccountNotFoundByIdException;
 import org.bank.transactionservice.client.AccountClient;
-import org.bank.transactionservice.dto.PageResponse;
+import org.bank.transactionservice.entity.TransactionEntity;
 import org.bank.transactionservice.mapper.TransactionMapper;
 import org.bank.transactionservice.repository.TransactionRepository;
+import org.bank.transactionservice.specification.TransactionSpecifications;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.time.Instant;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -29,6 +32,10 @@ public class TransactionHistoryService {
     @Transactional(readOnly = true)
     public PageResponse<TransactionDto> getHistory(
             Long accountId,
+            TransactionType type,
+            TransactionStatus status,
+            Instant from,
+            Instant to,
             Pageable pageable
     ) {
 
@@ -61,24 +68,35 @@ public class TransactionHistoryService {
             );
         }
 
-        Page<TransactionDto> page =
-                transactionRepository
-                        .findBySenderAccountIdOrRecipientAccountId(
-                                accountId,
-                                accountId,
-                                pageable
-                        )
-                        .map(transactionMapper::toDto);
+        Specification<TransactionEntity> spec =
+                TransactionSpecifications.hasSenderAccountId(accountId)
+                        .or(TransactionSpecifications.hasRecipientAccountId(accountId));
 
-        log.debug(
-                "Transaction history fetched: accountId={}, page={}, size={}, totalElements={}",
-                accountId,
-                pageable.getPageNumber(),
-                pageable.getPageSize(),
-                page.getTotalElements()
-        );
+        if(status != null) {
+            spec = spec.and(TransactionSpecifications.hasStatus(status));
+        }
 
-        return new PageResponse<>(
+        if (type != null) {
+            spec = spec.and(
+                    TransactionSpecifications.hasType(type)
+            );
+        }
+
+        if (from != null) {
+            spec = spec.and(
+                    TransactionSpecifications.createdAfter(from)
+            );
+        }
+
+        if (to != null) {
+            spec = spec.and(
+                    TransactionSpecifications.createdBefore(to)
+            );
+        }
+
+        Page<TransactionDto> page = transactionRepository.findAll(spec, pageable).map(transactionMapper::toDto);
+
+        PageResponse<TransactionDto> response = new PageResponse<>(
                 page.getContent(),
                 page.getNumber(),
                 page.getSize(),
@@ -87,5 +105,14 @@ public class TransactionHistoryService {
                 page.isFirst(),
                 page.isLast()
         );
+        log.debug(
+                "Transaction history fetched: accountId={}, page={}, size={}, totalElements={}",
+                accountId,
+                pageable.getPageNumber(),
+                pageable.getPageSize(),
+                response.totalElements()
+        );
+
+        return response;
     }
 }

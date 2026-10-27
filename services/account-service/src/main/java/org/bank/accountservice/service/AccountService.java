@@ -3,6 +3,7 @@ package org.bank.accountservice.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.bank.accountservice.client.BalanceClient;
+import org.bank.accountservice.specifications.AccountSpecifications;
 import org.bank.common.AccountDto;
 import org.bank.accountservice.entity.AccountEntity;
 import org.bank.accountservice.mapper.AccountMapper;
@@ -13,6 +14,9 @@ import org.bank.common.exception.AccountBalanceNotZeroException;
 import org.bank.common.exception.AccountNotFoundByIbanException;
 import org.bank.common.exception.AccountNotFoundByIdException;
 import org.bank.common.exception.CurrencyNotFoundByAccountId;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -171,30 +175,61 @@ public class AccountService {
     }
 
     @Transactional(readOnly = true)
-    public List<AccountDto> getUserAccounts(Long userId) {
+    public PageResponse<AccountDto> getAccounts(
+            Long userId,
+            CurrencyCode currency,
+            AccountStatus status,
+            Pageable pageable
+    ) {
+        Specification<AccountEntity> spec =
+                AccountSpecifications.hasUserId(userId);
 
-        log.debug(
-                "Fetching accounts for userId={}",
-                userId
+        if (currency != null) {
+            spec = spec.and(
+                    AccountSpecifications.hasCurrency(currency)
+            );
+        }
+
+        if (status != null) {
+            spec = spec.and(
+                    AccountSpecifications.hasStatus(status)
+            );
+        }
+
+        Page<AccountDto> page = accountRepository.findAll(spec, pageable).map(account -> {
+            BalanceDto balance =
+                    balanceClient.getBalanceByAccountId(account.getId());
+
+            return new AccountDto(
+                    account.getId(),
+                    userId,
+                    account.getIban(),
+                    account.getStatus(),
+                    account.getCurrency(),
+                    balance,
+                    account.getCreatedAt()
+            );
+        });
+
+        PageResponse<AccountDto> response = new PageResponse<>(
+                page.getContent(),
+                page.getNumber(),
+                page.getSize(),
+                page.getTotalElements(),
+                page.getTotalPages(),
+                page.isFirst(),
+                page.isLast()
         );
 
-        List<AccountEntity> accounts = accountRepository.findAllByUserId(userId);
+        log.debug(
+                "Accounts fetched: userId={}, page={}, size={}, totalElements={}",
+                userId,
+                pageable.getPageNumber(),
+                pageable.getPageSize(),
+                response.totalElements()
+        );
 
-        return accounts.stream()
-                        .map(account -> {
-                                    BalanceDto balance =
-                                            balanceClient.getBalanceByAccountId(account.getId());
-
-                                    return new AccountDto(
-                                            account.getId(),
-                                            userId,
-                                            account.getIban(),
-                                            account.getStatus(),
-                                            account.getCurrency(),
-                                            balance,
-                                            account.getCreatedAt()
-                                    );
-                                }).toList();
+        return response;
     }
 
     @Transactional(readOnly = true)

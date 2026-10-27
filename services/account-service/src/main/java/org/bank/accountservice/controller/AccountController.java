@@ -3,10 +3,15 @@ package org.bank.accountservice.controller;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.bank.accountservice.dto.CreateAccountRequest;
+import org.bank.accountservice.dto.GetAccountsRequest;
 import org.bank.accountservice.service.AccountService;
 import org.bank.authcommon.service.AuthCommonService;
 import org.bank.common.AccountDto;
 import org.bank.common.CurrencyCode;
+import org.bank.common.PageResponse;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -52,12 +57,21 @@ public class AccountController {
     }
 
     @GetMapping
-    public ResponseEntity<List<AccountDto>> getUserAccounts() {
+    public ResponseEntity<PageResponse<AccountDto>> getUserAccounts(
+            @ModelAttribute GetAccountsRequest request,
+            @PageableDefault(size = 20)
+            Pageable pageable
+    ) {
         Long userId = authCommonService.getUserId();
         log.debug("Getting accounts for user: userId={}", userId);
 
         return ResponseEntity.ok(
-                accountService.getUserAccounts(userId)
+                accountService.getAccounts(
+                        userId,
+                        request.currency(),
+                        request.status(),
+                        pageable
+                )
         );
     }
 

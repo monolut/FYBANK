@@ -1,4 +1,4 @@
-package org.bank.transactionservice.dto;
+package org.bank.common;
 
 import java.util.List;
 
